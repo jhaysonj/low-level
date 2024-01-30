@@ -1,0 +1,47 @@
+conte até 8 unidades em binário 
+0 = 0 
+1  = 1
+10 = 2
+11 = 3
+100 = 4
+101 = 5
+110 = 6
+111 = 7 
+1000 = 8
+
+
+conte até 20 em mbin (base 4, tem 4 simbolos)
+m = 0
+b = 1
+i = 2
+n = 3
+
+bm = 4
+bb = 5
+bi = 6
+bn = 7
+
+im = 8
+ib = 9
+ii = 10
+in = 11
+
+nm = 12
+nb = 13
+ni = 14
+nn = 15
+
+bmm = 16
+bmb = 17
+bmi = 18
+bmn = 19
+
+bbm = 20
+
+hexa até 20 unidades
+
+
+qual o resultado de 0x19+1 ? (em hexadecimal)
+0x401000 - 4? (em hexadecimal)
+
+
