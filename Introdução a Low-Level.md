@@ -516,7 +516,11 @@ O conteúdo desse tópico será fortemente baseado na discussão do mente binár
 Forum - https://www.mentebinaria.com.br/forums/topic/97-formato-pe
 Youtube - https://www.youtube.com/@mentebinaria
 
-## Executable (EXE)
+## Portable Executables (PE)
+Os arquivos PE contêm todas as informações necessárias para que o sistema operativo carregue corretamente o código executável, ou seja, os arquivos com extensão `.exe` e `.dll` são arquivos no formato PE. 
+
+Link para Discussão do formato PE - https://stackoverflow.com/questions/33757527/difference-between-exe-and-pe-files
+
 **DOS-Signature:** 
 Uma sequência de bytes no início do arquivo que identifica o arquivo como um executável.
 Nas imagens abaixo, podemos notar que os dois arquivos .exe começam com a representação ASCII `MZ` e word `4d 5a`.
@@ -601,6 +605,32 @@ print("Data e Hora:", dt_object)
 Com isso, obtemos `Data e Hora: 2023-04-12 17:52:00`
 No formato "ano-mês-dia"
 
+Lógico que analisar manualmente cada um dos cabeçalhos daria muito trabalho, existem programas como o objdump que automatiza essas análises
+```
+ objdump -p ~/Downloads/Install\ League\ of\ Legends\ br.exe | head -n 20
+
+/home/romio/Downloads/Install League of Legends br.exe:     file format pei-i386
+
+Characteristics 0x122
+	executable
+	large address aware
+	32 bit words
+
+Time/Date		Wed Apr 12 17:52:00 2023
+Magic			010b	(PE32)
+MajorLinkerVersion	14
+MinorLinkerVersion	34
+SizeOfCode		0065c800
+SizeOfInitializedData	03dc6200
+SizeOfUninitializedData	00000000
+AddressOfEntryPoint	00607b4c
+BaseOfCode		00001000
+BaseOfData		0065e000
+ImageBase		00400000
+SectionAlignment	00001000
+
+```
+
 
 Video Recomendado [Português] - https://www.youtube.com/watch?v=WB8pLhfr_hU
 Video Recomendado [Inglês] - https://www.youtube.com/watch?v=-ojciptvVtY
@@ -617,8 +647,7 @@ Comando `ls`
 
 Comando `cat`
 ![[Pasted image 20240131111142.png]]
-## parei em
-https://www.youtube.com/watch?v=WB8pLhfr_hU&list=PLIfZMtpPYFP6zLKlnyAeWY1I85VpyshAA&index=6
+
 ## System calls (Syscalls)
 **O que é system call?**
 Uma syscall é uma forma de mantermos uma interação entre o programa e o kernel do sistema operacional, com o objetivo solicitar um serviço/recurso ao sistema operacional.
