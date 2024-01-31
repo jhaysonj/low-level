@@ -1,4 +1,4 @@
-# Descrição do Guia
+# Descrição do Guia de Low-Level
 Idealizado por [Jhayson Jales]
 Dificuldade do Guia [Medium]
 Material de Apoio [https://github.com/RPISEC/MBE/tree/master]
@@ -222,7 +222,7 @@ boot  etc  lib   lib64  lost+found  mnt    recovery  run   snap  sys  usr
 ```
 cat hello.asm   
 section .data
-msg: db "Gris UFRJ", 10
+msg: db "Gris UFRJ", 10; ou msg: db "Gris UFRJ\n"
 len: equ $-msg
 
 section .text
@@ -240,6 +240,8 @@ mov eax, 1
 int 0x80
 
 ```
+
+ 
 
 Vamos gerar um object-file do arquivo hello.asm, no formato ELF (Executable and Linkable Format) de 32 bits
 ```
@@ -269,8 +271,259 @@ Note que a linha sublinha representa a string `Gris UFRJ`
 | F | 46 |
 | R | 52 |
 | J | 4a |
- 
+## Strings de Texto
+Vamos analisar um arquivo de texto, para isso criaremos um arquivo chamado programinha.c
+```
+┌──(romio@pop-os)-[~/Documents/Esoj/semana 1/codigos]
+└─$ cat programinha.c
+#include <stdio.h>
 
+int main(void) {
+	puts("blog.gris.dcc.ufrj.br");
+	return 0;
+}
+
+
+┌──(romio@pop-os)-[~/Documents/Esoj/semana 1/codigos]
+└─$ make programinha
+cc     programinha.c   -o programinha
+
+```
+### 0a
+Os analisadores de hexadecimal não possuem representação gráfica para a quebra de linha, com isso acabam representando graficamente o `\n` como `.` 
+![[Pasted image 20240130170111.png]]
+Como exibido na imagem acima, ao quebrar a linha duas vezes `0a 0a`, a representação gráfica foi `..` 
+
+Consultando a tabela ASCII conseguimos determinar que a string `.` é definida pelo hexadecimal `2e`.  
+![[Pasted image 20240130170021.png]]
+obs: note que a visualização do arquivo ficou diferente pois na primeira 
+**Comportamento no Windows:**
+No Windows temos dois bytes para fazermos a quebra de linha, o Carriage Return e o Line Feed, sendo respectivamente, `0d` e `0a` em hexadecimal.
+
+Além disso, o hexadecimal pode ser influenciado pelo encoding, tanto no Windows como no Linux
+![[Pasted image 20240130153453.png]]
+
+```
+┌──(romio@pop-os)-[~/Documents/Esoj/semana 1/codigos]
+└─$ echo árvore | strings
+rvore
+                                                                                
+┌──(romio@pop-os)-[~/Documents/Esoj/semana 1/codigos]
+└─$ echo árvore | strings -e S
+árvore
+
+```
+
+
+**Analisando o arquivo3.txt:** 
+O arquivo3.txt contém apenas a quebra de linha
+```
+┌──(romio@pop-os)-[~/Documents/Esoj/semana 1/codigos]
+└─$ echo > arquivo3.txt
+
+┌──(romio@pop-os)-[~/Documents/Esoj/semana 1/codigos]
+└─$ hd arquivo3.txt 
+00000000  0a                                                |.|
+00000001
+```
+Com isso, podemos ver que o hexadecimal de quebra de linha é o 0a, ou seja, **conseguimos deduzir a quantidade de linhas de um arquivo apenas contabilizando a quantidade de `0a`.**
+
+
+**Analisando programinha.c**
+```
+hd programinha.c
+00000000  23 69 6e 63 6c 75 64 65  20 3c 73 74 64 69 6f 2e  |#include <stdio.|
+00000010  68 3e 0a 0a 69 6e 74 20  6d 61 69 6e 28 76 6f 69  |h>..int main(voi|
+00000020  64 29 20 7b 0a 09 70 75  74 73 28 22 62 6c 6f 67  |d) {..puts("blog|
+00000030  2e 67 72 69 73 2e 64 63  63 2e 75 66 72 6a 2e 62  |.gris.dcc.ufrj.b|
+00000040  72 22 29 3b 0a 09 72 65  74 75 72 6e 20 30 3b 0a  |r");..return 0;.|
+00000050  7d 0a                                             |}.|
+00000052
+
+```
+Temos seis `0a`, um para cada linha do programa, isso porque após fechar a chave eu dei um último enter
+![[Pasted image 20240130144541.png]]
+![[Pasted image 20240130144658.png]]
+
+### Exercício recomendado:
+1) edite o pega_string.c para exibir tudo que estiver entre hex `20` e `7e`
+2) edite o pega_string.c para exibir apenas letras maiúsculas
+3) edite o pega_string.c para exibir apenas letras minúsculas
+4) edite o pega_string.c para exibir apenas caracter numéricos
+
+Para realizar os testes, pase como entrada o arquivo abaixo
+```
+└─$ cat entrada.txt 
+abcdefghijklmnopqrstuvwxyz
+ABCDEFGHIJKLMNOPQRSTUVWXYZ
+0123456789
+
+```
+
+Arquivo pega_string.c
+```
+┌──(romio@pop-os)-[~/Documents/Esoj/semana 1/codigos]
+└─$ cat pega_string.c   
+#include <stdio.h>
+
+int main(int argc, char *argv[]) {
+    FILE *fp = fopen(argv[1], "rb");
+    unsigned char byte;
+
+    while (fread(&byte, sizeof(byte), 1, fp)){
+        printf("%c", byte);
+    }
+
+    printf("\n");
+    fclose(fp);
+
+
+    return 0;
+}                                                  
+```
+
+Executando o pega_string
+```
+┌──(romio@pop-os)-[~/Documents/Esoj/semana 1/codigos]
+└─$ make pega_string
+cc     pega_string.c   -o pega_string
+
+┌──(romio@pop-os)-[~/Documents/Esoj/semana 1/codigos]
+└─$ ./pega_string entrada.txt 
+abcdefghijklmnopqrstuvwxyz
+ABCDEFGHIJKLMNOPQRSTUVWXYZ
+0123456789
+
+```
+
+**Resposta 1:**
+Basta criarmos um if condicional que verifica se o byte está incluso na range entre `0x20` e `0x7e`.
+
+```c
+#include <stdio.h>
+
+int main(int argc, char *argv[]) {
+    FILE *fp = fopen(argv[1], "rb");
+    unsigned char byte;
+
+    while (fread(&byte, sizeof(byte), 1, fp)){
+    	if(byte >= 0x20 && byte <= 0x7e){
+        printf("%c", byte);
+	    }
+    }
+
+    printf("\n");
+    fclose(fp);
+
+
+    return 0;
+}
+
+```
+Esse arquivo imprime na tela só o conteúdo que possui representação visual, ou seja, com isso removemos todos os `\n` do arquivo entrada.txt
+
+```
+┌──(romio@pop-os)-[~/Documents/Esoj/semana 1/codigos]
+└─$ make resposta1_pega_string   
+cc     resposta1_pega_string.c   -o resposta1_pega_string
+                                                                                
+┌──(romio@pop-os)-[~/Documents/Esoj/semana 1/codigos]
+└─$ ./resposta1_pega_string entrada.txt 
+abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789
+
+```
+obs: Note que ainda existe um `\n`, entratanto ele é referente ao `\n` do código, todos os `\n` do arquivo entrada.txt foram removidos.
+
+**Resposta 2:**
+Similar ao que fizemos, basta editarmos a condição if, consultando a tabela ASCII, constatamos que os valores maiúsculos A-Z estão no range hexadecimal 0x41 e 0x5a
+
+**Código:**
+```c
+#include <stdio.h>
+
+int main(int argc, char *argv[]) {
+    FILE *fp = fopen(argv[1], "rb");
+    unsigned char byte;
+
+    while (fread(&byte, sizeof(byte), 1, fp)){
+    	if(byte >= 0x41 && byte <= 0x5a){
+        printf("%c", byte);
+	    }
+    }
+
+    printf("\n");
+    fclose(fp);
+
+
+    return 0;
+}                  ```
+
+```
+┌──(romio@pop-os)-[~/Documents/Esoj/semana 1/codigos]
+└─$ make resposta2_pega_string
+cc     resposta2_pega_string.c   -o resposta2_pega_string
+                                                                                                                                                                                              
+┌──(romio@pop-os)-[~/Documents/Esoj/semana 1/codigos]
+└─$ ./resposta2_pega_string entrada.txt
+ABCDEFGHIJKLMNOPQRSTUVWXYZ
+                               
+```
+
+**Resposta 3:**
+De forma análoga, consultando a tabela ASCII, constatamos que os valores maiúsculos a-z estão no range hexadecimal 0x61 e 0x7a
+Código:
+```c
+#include <stdio.h>
+
+int main(int argc, char *argv[]) {
+    FILE *fp = fopen(argv[1], "rb");
+    unsigned char byte;
+
+    while (fread(&byte, sizeof(byte), 1, fp)){
+    	if(byte >= 0x61 && byte <= 0x7a){
+        printf("%c", byte);
+	    }
+    }
+
+    printf("\n");
+    fclose(fp);
+
+
+    return 0;
+}                
+```
+
+```
+┌──(romio@pop-os)-[~/Documents/Esoj/semana 1/codigos]
+└─$ make resposta3_pega_string         
+cc     resposta3_pega_string.c   -o resposta3_pega_string
+                                                                                                                                                                                              
+┌──(romio@pop-os)-[~/Documents/Esoj/semana 1/codigos]
+└─$ ./resposta3_pega_string entrada.txt 
+abcdefghijklmnopqrstuvwxyz
+
+```
+
+
+# Semana 2
+O conteúdo desse tópico será fortemente baseado na discussão do mente binária. Fica o link de referência ao material original.
+Forum - https://www.mentebinaria.com.br/forums/topic/97-formato-pe
+Youtube - https://www.youtube.com/@mentebinaria
+
+## Executable (EXE)
+Vimos na semana 1 que não nos referimos a todo tipo de arquivo como binários. Nesse capítulo vamos estudar o que define um binário/executável.
+
+## Executable and Linkable Format (ELF)
+**Assinatura:**
+O que define um arquivo como ser executável é o que chamamos de assinatura, se analisarmos o hexadecimal desses arquivos, todos começam com `7f 45 4c 46` que indicam `.elf` em ASCII
+
+Comando `ls`
+![[Pasted image 20240131110945.png]]
+
+Comando `cat`
+![[Pasted image 20240131111142.png]]
+## parei em
+https://www.youtube.com/watch?v=WB8pLhfr_hU&list=PLIfZMtpPYFP6zLKlnyAeWY1I85VpyshAA&index=6
 ## System calls (Syscalls)
 **O que é system call?**
 Uma syscall é uma forma de mantermos uma interação entre o programa e o kernel do sistema operacional, com o objetivo solicitar um serviço/recurso ao sistema operacional.
@@ -331,22 +584,8 @@ https://github.com/RPISEC/MBE/tree/master/src
 A ordem de dificuldade é crescente indo da pasta lab01 até a pasta 
 lab10. Dentro da pasta existem sempre 3 arquivos, a ordem de dificuldade crescente é do C para o A. Essa nomenclatura indica a nota do estudante no sistema norte-americano, se o aluno resolver apenas o desafio C ficaria com nota C, se resolver B e C receberia nota B, caso o aluno resolvesse os três desafios receberia nota A.
 
-# Desafio 1C
-**Analise Dinamica:**
-Aqui executamos o arquivo lab1C para verificarmos o que é feito.
-```
-./lab1C 
------------------------------
---- RPISEC - CrackMe v1.0 ---
------------------------------
+# Semana X
 
-Password: teste
-
-Invalid Password!!!
-
-```
-
-**Análise Estática**
 ## Guia Ghidra
 1. instale o ghidra
 ```
@@ -374,7 +613,25 @@ Agora que temos o arquivo analisado pelo Ghidra, podemos examinar o comportament
 No menu Symbol tree do ghidra, faça o caminho Functions -> main
 ![[Pasted image 20240130000840.png]]
 
-Código
+## Lab1
+## Desafio 1C
+**Analise Dinamica:**
+Aqui executamos o arquivo lab1C para verificarmos o que é feito.
+```
+./lab1C 
+-----------------------------
+--- RPISEC - CrackMe v1.0 ---
+-----------------------------
+
+Password: teste
+
+Invalid Password!!!
+
+```
+
+**[[#Guia Ghidra|Análise Estática]]**
+
+**Código:**
 ```
 bool main(void)
 
@@ -398,7 +655,38 @@ bool main(void)
 
 ```
 
-Com base no trecho acima, podemos verificar que se a senha for diferente de 0x149a então a senha é considerada errada. Com isso, basta digitarmos uma senha igual a 0x149a
+Com base no trecho acima, podemos verificar que se a senha for diferente de 0x149a então a senha é considerada errada. Com isso, basta digitarmos uma senha igual a 0x149a, entretanto precisamos descobrir se trata-se de um int, char, float ou double. Uma maneira ingênua seria testar todas as possibilidades, entretanto podemos usar a função scanf para nos ajudar a decidir qual é o tipo de variável.
+
+### Relembrando Scanf
+A função scanf recebe dois paramêtros, o primeiro é o que chamamos de Format String e o segundo é a posição de memória.
+
+**Format String (%specifier)**
+A Format String  é composta por especificadores de formato que indicam o tipo de dados que será lido. Exemplos de especificadores incluem `%d` para inteiros, `%f` para floats, `%c` para caracteres, `%s` para strings.
+
+```C
+int numero; 
+scanf("%d", &numero); // int
+
+```
+
+```C
+float valor; 
+scanf("%f", &valor); // float
+```
+
+```c
+char caractere;
+scanf("%c", &caractere); // char
+```
+
+Com isso, ao clicarmos na variável `&DAT_08048818`, vamos para o trecho em assembly correspondente, como mostra a imagem abaixo:
+
+![[Pasted image 20240131110234.png]]
+Pelo assembly `%d`, conseguimos definir que a variável trata-se de um número inteiro, ou seja, a senha em hexadecimal `0x149a` armazenada em um vetor de 4 posições é o inteiro 5274.
+**Video de Resolução:**
+https://www.youtube.com/watch?v=UxTG7bS3nuY
+
+
 
 # Tools
 vim/nano 

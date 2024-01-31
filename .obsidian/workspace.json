@@ -4,16 +4,16 @@
     "type": "split",
     "children": [
       {
-        "id": "465457f77e73c9e1",
+        "id": "96bf1ede71267be1",
         "type": "tabs",
         "children": [
           {
-            "id": "68fdf5d46b9003ad",
+            "id": "4c35bb2d94fdb575",
             "type": "leaf",
             "state": {
               "type": "markdown",
               "state": {
-                "file": "resume.md",
+                "file": "Introdução a Low-Level.md",
                 "mode": "source",
                 "source": false
               }
@@ -38,7 +38,7 @@
             "state": {
               "type": "outline",
               "state": {
-                "file": "resume.md"
+                "file": "Introdução a Low-Level.md"
               }
             }
           },
@@ -95,7 +95,7 @@
             "state": {
               "type": "backlink",
               "state": {
-                "file": "resume.md",
+                "file": "Introdução a Low-Level.md",
                 "collapseAll": false,
                 "extraContext": false,
                 "sortOrder": "alphabetical",
@@ -112,7 +112,7 @@
             "state": {
               "type": "outgoing-link",
               "state": {
-                "file": "resume.md",
+                "file": "Introdução a Low-Level.md",
                 "linksCollapsed": false,
                 "unlinkedCollapsed": true
               }
@@ -147,31 +147,33 @@
       "graph:Open graph view": false
     }
   },
-  "active": "68fdf5d46b9003ad",
+  "active": "4c35bb2d94fdb575",
   "lastOpenFiles": [
-    "Pasted image 20240130135653.png",
-    "Pasted image 20240130134844.png",
-    "semana 1/codigos/hellonasm",
-    "semana 1/codigos/hello.asm",
-    "semana 1/codigos/arquivo3.txt",
-    "semana 1/codigos/arquivo2.txt",
-    "semana 1/codigos/arquivo1.txt",
-    "semana 1/prog1.c",
-    "semana 1/prog1",
-    "semana 1/hellonasm",
-    "semana 1/hello.asm",
-    "semana 1/ex1",
+    "images/Pasted image 20240131111142.png",
+    "images/Pasted image 20240131110945.png",
+    "images/Pasted image 20240131110234.png",
+    "Pasted image 20240131111142.png",
+    "Pasted image 20240131110945.png",
+    "Pasted image 20240131110234.png",
+    "guia de ghidra.md",
+    "Introdução a Low-Level.md",
+    "Análise Estática.md",
+    "semana 2",
+    "images/Pasted image 20240130170111.png",
+    "images/Pasted image 20240130170021.png",
+    "images/Pasted image 20240130153453.png",
+    "images/Pasted image 20240130144658.png",
+    "images/Pasted image 20240130144541.png",
+    "semana 1/codigos/resposta3_pega_string",
+    "semana 1/codigos/resposta3_pega_string.c",
+    "semana 1/codigos/resposta2_pega_string",
+    "semana 1/codigos/resposta2_pega_string.c",
+    "semana 1/codigos/resposta1_pega_string",
+    "semana 1/codigos/resposta1_pega_string.c",
+    "semana 1/codigos/pega_string1",
+    "semana 1/codigos/entrada.txt",
+    "semana 1/codigos/pega_string",
     "Untitled.canvas",
-    "resume.md",
-    "2024-01-30.md",
-    "images/Pasted image 20240130121715.png",
-    "images/Pasted image 20240130121134.png",
-    "images/Pasted image 20240130121053.png",
-    "images/Pasted image 20240130120919.png",
-    "Pasted image 20240130085407.png",
-    "images/Pasted image 20240130085407.png",
-    "images/Pasted image 20240130084227.png",
-    "images/Pasted image 20240130083111.png",
-    "images/Pasted image 20240130000840.png"
+    "2024-01-30.md"
   ]
 }
