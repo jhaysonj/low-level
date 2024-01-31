@@ -187,11 +187,15 @@ Podemos validar isso através dos comandos abaixo:
 
 ```
 
+**Offset:**
+Quando nos referimos a um byte em uma posição específica em um arquivo ou na memória, podemos usar os termos "byte na posição 0x88" ou "byte no offset 0x88". O termo "offset" é frequentemente usado para descrever a distância em bytes a partir de um ponto de referência.
+
 **Exercício**
 Através do comando abaixo, exibimos o conteudo hexadecimal do executável `/bin/ls`
 ```
 hd /bin/ls | less
 ```
+
 Diante da imagem abaixo, identifique o byte na posição 0x88
 ![[Pasted image 20240130120919.png]]
 **Resposta** 
@@ -506,14 +510,105 @@ abcdefghijklmnopqrstuvwxyz
 
 
 # Semana 2
+Vimos na semana 1 que não nos referimos a todo tipo de arquivo como binários. Nesse capítulo vamos estudar o que define um executável/binário.
+
 O conteúdo desse tópico será fortemente baseado na discussão do mente binária. Fica o link de referência ao material original.
 Forum - https://www.mentebinaria.com.br/forums/topic/97-formato-pe
 Youtube - https://www.youtube.com/@mentebinaria
 
 ## Executable (EXE)
-Vimos na semana 1 que não nos referimos a todo tipo de arquivo como binários. Nesse capítulo vamos estudar o que define um binário/executável.
+**DOS-Signature:** 
+Uma sequência de bytes no início do arquivo que identifica o arquivo como um executável.
+Nas imagens abaixo, podemos notar que os dois arquivos .exe começam com a representação ASCII `MZ` e word `4d 5a`.
+
+**Definições de Word:**
+Byte = 8 bits
+WORD = 2 bytes
+DWORD (double WORD) = 4 bytes
+QWORD (quad WORD) = 8 bytes
+
+![[Pasted image 20240131114043.png]]
+![[Pasted image 20240131114349.png]]
+Se trocarmos o hexadecimal `4d` = `m` por `4e` = `n` teríamos um executável corrompido.
+
+### Offset 0x18
+Temos uma DWORD (double word) com o valor `0x40000000`. Aqui temos que fazer a seguinte consideração: na arquitetura Intel os bytes são endereçados de forma inversa, mais conhecido como Little Endian. Em Little Endian, os bytes menos significativos (LSB) são armazenados primeiro, por isso devemos inverter estes bytes. Então temos o valor `0x00000040` = `0x40`, este é o deslocamento para DOS-Stub.
+
+![[Pasted image 20240131132248.png]]
+
+### offset 0x3c/e_lfanew
+Na posição `0x3c` temos o ponteiro conhecido como o campo `e_lfanew`. O valor encontrado nesse ponteiro, aponta para o início do cabeçalho IMAGE_NT_HEADERS (cabeçalho PE).
+
+![[Pasted image 20240131140735.png]]
+
+Por conta do little endian passamos de `68 01 00 00` para `00 00 01 68` = `0x168`, ou seja, na posição `0x168` temos o inicio do cabeçalho PE
+![[Pasted image 20240131140902.png]]
+
+**Importancia da assinatura PE**
+A partir da assinatura PE conseguimos algumas informações importantes.
+
+### Cabeçalho COFF
+**Definindo arquitetura atráves do campo Machine**
+Logo após a assinatura PE na posição 0x168 temos o primeiro campo do cabeçalho COFF que é o `Machine` o valor `4c 01` que define que este executável foi criado para máquinas Intel i386 ou compatíveis.
+
+| Valor em Little-Endian | Arquitetura |
+|------------------------|-------------|
+| 0x 4c 01               | i386        |
+| 0x 64 86                 | AMD64       |
+| 0x 00 02                 | Itanium     |
+![[Pasted image 20240131143339.png]]
+
+**Definindo o TimeDateStamp****
+Depois vem o campo **TimeDateStamp** com o número inteiro de 32 _bits_ (4 _bytes_) com o valor `f0 19 37 64` (Em little-endian)
+![[Pasted image 20240131144238.png]]
+**Interpretação do TimeDateStamp**
+Para conseguirmos interpretar o TimeDateStamp precisamos seguir alguns passos
+1. **Conversão para big-endian**
+	No hexdump a representação é little-endian `f0 19 37 64`, ou seja, precisamos passar para big-endian, ficando com `64 37 19 f0`. 
+2. **Converta para Decimal:**
+	conversão do valor hexadecimal `64 37 19 f0` (big-endian) para decimal
+	conversão de hexadecimal para decimal [Português] - https://www.youtube.com/watch?v=Vctnbk0RWVY 
+Com isso, obtemos o valor decimal `1681332720`, Este timestamp representa a data e hora em que o executável foi vinculado ou compilado, medido em segundos desde 1º de janeiro de 1970 (timestamp UNIX).
+
+A partir dos programas abaixo conseguimos calcular a data da compilação
+**Em C:**
+```C
+#include <stdio.h>
+#include <time.h>
+
+int main() {
+    time_t timestamp = 1681332720;
+    struct tm *timeinfo;
+
+    timeinfo = localtime(&timestamp);
+
+    printf("Data e Hora: %s", asctime(timeinfo));
+
+    return 0;
+}
+
+```
+**Em Python**
+```python
+import datetime
+
+timestamp = 1681332720
+dt_object = datetime.datetime.fromtimestamp(timestamp)
+
+print("Data e Hora:", dt_object)
+
+```
+Com isso, obtemos `Data e Hora: 2023-04-12 17:52:00`
+No formato "ano-mês-dia"
+
+
+Video Recomendado [Português] - https://www.youtube.com/watch?v=WB8pLhfr_hU
+Video Recomendado [Inglês] - https://www.youtube.com/watch?v=-ojciptvVtY
 
 ## Executable and Linkable Format (ELF)
+
+Video Recomendado [Inglês] - https://youtu.be/WnqOhgI_8wA?t=113
+
 **Assinatura:**
 O que define um arquivo como ser executável é o que chamamos de assinatura, se analisarmos o hexadecimal desses arquivos, todos começam com `7f 45 4c 46` que indicam `.elf` em ASCII
 
@@ -689,7 +784,7 @@ https://www.youtube.com/watch?v=UxTG7bS3nuY
 
 
 # Tools
-vim/nano 
+vim/nano (não será necessário usar os dois editores de texto, escolha o que preferir)
 make
 gcc
 objdump
