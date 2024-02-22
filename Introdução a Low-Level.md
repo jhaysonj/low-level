@@ -825,3 +825,8 @@ sudo apt install vim nano make gcc objdump ltrace
 ```
 # Referências
 Definindo System Calls https://www.geeksforgeeks.org/introduction-of-system-call/
+
+
+
+# parei em 
+https://www.youtube.com/watch?v=WB8pLhfr_hU
