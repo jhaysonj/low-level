@@ -300,7 +300,8 @@ Como exibido na imagem acima, ao quebrar a linha duas vezes `0a 0a`, a represent
 
 Consultando a tabela ASCII conseguimos determinar que a string `.` é definida pelo hexadecimal `2e`.  
 ![[Pasted image 20240130170021.png]]
-obs: note que a visualização do arquivo ficou diferente pois na primeira 
+
+
 **Comportamento no Windows:**
 No Windows temos dois bytes para fazermos a quebra de linha, o Carriage Return e o Line Feed, sendo respectivamente, `0d` e `0a` em hexadecimal.
 
@@ -825,6 +826,8 @@ sudo apt install vim nano make gcc objdump ltrace
 ```
 # Referências
 Definindo System Calls https://www.geeksforgeeks.org/introduction-of-system-call/
+
+Guia de engenharia reversa https://github.com/mytechnotalent/Reverse-Engineering
 
 
 
