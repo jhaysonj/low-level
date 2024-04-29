@@ -1,6 +1,6 @@
 Projeto do GRIS - Grupo de Resposta a Incidentes de Segurança - Universidade Federal do Rio de Janeiro 
 
-Idealizado por [Jhayson Jales, João Pedro Nunes, Pedro Kitagawa] 
+Idealizado por [Jhayson Jales, [João Pedro Nunes](https://github.com/Mistersz), [Pedro Kitagawa](https://github.com/k1sta)] 
 Dificuldade do Guia [Medium]
 Ano de inicio [2024 - ∞]
 
@@ -198,7 +198,7 @@ jz $LOC ; Pula para $LOC se ZF = 1
 jnz $LOC ; Pula para $LOC se ZF ≠ 0 (ou seja, se não estiver zero)
 ```
 
-**Jump If Greater (jg)**
+**Jump if Greater (jg)**
 ```
 jg $LOC ; Pula para $LOC se ZF=0 e SF=OF
 ```
@@ -206,3 +206,143 @@ jg $LOC ; Pula para $LOC se ZF=0 e SF=OF
 **SF = OF**: Sign Flag é igual ao Overflow Flag.
 
 ### Manipulação da Stack
+**Instrução push:**
+```
+PUSH ebx
+```
+O valor armazenado no registrador EBX é colocado na stack.
+O stack pointer (`esp`) é decrementado em 4 bytes e passa a apontar para uma nova posição no stack, já que a stack cresce "para baixo" em x86.
+
+**instrução pop:**
+```
+POP ebx
+```
+O valor da stack é armazenado no registrador EBX
+O stack pointer (`esp`) é incrementado em 4 bytes e passa a apontar para uma posição superior na stack, já que a stack cresce para baixo.
+
+**Instrução add:**
+```
+add esp, 4
+```
+**Incrementa o Stack Pointer**: A instrução adiciona 4 bytes ao valor atual do stack pointer, movendo-o para cima na pilha. Como o stack cresce para baixo em x86, ao incrementar o ESP, você está essencialmente "removendo" a parte superior da pilha, liberando espaço.
+**Libera Espaço no Stack**: Ao incrementar o ESP, você está indicando que não precisa mais dos dados que estavam no topo do stack. Isso pode ser uma forma de limpar ou "desfazer" uma operação de push, ou liberar espaço após uma função ou operação.
+
+
+**Instrução sub:**
+```
+sub esp, 4
+```
+**Decrementa o ESP**: A instrução `sub esp, 4` reduz o valor do stack pointer em 4 bytes. Como a pilha em x86 cresce para baixo (ou seja, para endereços de memória menores), esta instrução efetivamente cria espaço no topo do stack.
+
+**Reserva Espaço na Pilha**: Ao diminuir o stack pointer, você cria espaço para armazenar dados adicionais na pilha. Por exemplo, isso pode ser usado para alocar espaço para uma variável local ou para preparar uma área temporária para manipulação de dados.
+
+
+
+**Instrução mov:**
+```
+mov DWORD PTR [esp], ebx
+```
+A instrução "mov" em Assembly x86 é usada para copiar dados de um lugar para outro.
+- **Destino**: `[esp]` refere-se ao endereço de memória apontado pelo stack pointer (ESP).
+- **Origem**: `ebx` é um registrador que contém um valor de 32 bits.
+- **Ação**: A instrução move o valor de EBX para o endereço apontado por ESP, sem alterar o stack pointer.
+
+Outro exemplo de mov:
+```
+mov ebx, DWORD PTR [esp]
+```
+- A instrução `mov ebx, DWORD PTR [esp]` recupera um valor do topo do stack (onde ESP aponta) e o armazena no registrador EBX.
+- Essa operação não muda a posição do stack pointer, mantendo sua posição atual.
+
+
+**Exemplo de programa com instruções de manipulação da stack**
+
+```
+; Criar espaço no stack para um valor temporário
+sub esp, 4
+; Escrever um valor no stack
+mov DWORD PTR [esp], 12345
+; Ler o valor para EBX sem alterar ESP
+mov ebx, DWORD PTR [esp]
+```
+
+### Chamada e retorno de funções
+Exemplo de aplicação da instrução call e ret:
+```
+section .text
+    global _start  ; Ponto de entrada do programa
+
+_start:
+    mov eax, 10  ; Carrega diretamente 10 em EAX
+    mov ebx, 20  ; Carrega diretamente 20 em EBX
+
+    ; Chamar a função para somar os números
+    call add_numbers  ; Chama a função add_numbers
+
+    ; O resultado está em EAX após o retorno da função
+    ; Finaliza o programa com um syscall para sair
+    mov eax, 60  ; Syscall para saída
+    xor edi, edi  ; Código de saída 0 (sucesso)
+    syscall  ; Executar syscall para sair
+
+; Função para somar dois números
+add_numbers:
+    add eax, ebx  ; Soma EBX a EAX
+    ret  ; Retorna ao ponto após o `call`
+
+```
+
+
+```
+call add_numbers
+```
+- A instrução `call add_numbers` salva o endereço de retorno no stack antes de saltar para a função. Isso faz com que o stack pointer seja decrementado.
+- O stack pointer é ajustado para um valor menor, criando espaço no stack para armazenar o endereço de retorno.
+- O comportamento é como se tivesse feito um `push`, armazenando um valor no stack
+- 
+```
+ret 
+```
+- A instrução `ret` remove o endereço de retorno do stack e retorna o stack pointer à posição anterior, movendo-o para cima.
+- O stack pointer é incrementado, já que está liberando o espaço onde estava o endereço de retorno.
+- Isso é semelhante a um `pop`, restaurando o stack pointer para o estado anterior à chamada da função.
+
+**Instrução nop:**
+```
+nop
+```
+- nop (No operation): Não faz nada, literalmente.
+
+### Básico de x86
+
+```
+section .data
+    string db "GRISGRIS", 0  ; Define a string terminada por nulo
+
+section .text
+    global _start  ; Ponto de entrada do programa
+
+_start:
+    mov ebx, string  ; EBX aponta para a string
+    mov eax, 0       ; Contador para o comprimento da string
+
+LOOPY:               ; Label para o loop
+    mov cl, [ebx]    ; Carrega um byte da posição de EBX em CL
+    cmp cl, 0        ; Compara com zero (final da string)
+    jz end           ; Se for zero, pula para 'end'
+    inc eax          ; Incrementa o contador
+    inc ebx          ; Move EBX para o próximo byte
+    jmp LOOPY        ; Volta para o início do loop
+
+end:                 ; Label para o final
+    ret              ; Retorna (com o comprimento da string)
+
+```
+
+O código retorna o comprimento da string armazenada na variável `string`, no exemplo acima, a variável `string` armazena `GRISGRIS` tem 8 letras, então retornamos o valor 8.
+
+Os trechos `string db "GRISGRIS", 0` e `string db "GRISGRIS\0"` são equivalentes.
+
+
+# Linguagem C
+
