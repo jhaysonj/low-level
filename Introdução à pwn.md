@@ -55,17 +55,18 @@ Plataformas e desafios online dedicados à prática de pwn (exploração de vuln
 
 7. Over The Wire: Os wargames oferecidos pela comunidade OverTheWire podem ajudá-lo a aprender e praticar conceitos de segurança sob a forma de jogos divertidos.
 
-## Assembly x86
+# Assembly x86
 Todas as linguagens de Assembly são feitas a partir de sets de instrução
 
 **Instruções**
 As instruções, também chamadas de Operadores, OpCodes, Op(s) ou mnemônicos são operações aritméticas simples que aceitam registradores ou valores constantes como argumentos. Existem duas versões de sintaxe para o Assembly x86:
 
 
-**Sintaxe da Intel:**     `operador destino, fonte`
+
+**Sintaxe da Intel:**     `operador destino, origem`
 	            `mov eax, 5`
 
-- Sintaxe da AT&T:   `operador fonte, destino`
+- Sintaxe da AT&T:   `operador origem, destino`
 				 `mov $5, %eax`
 
 
@@ -144,7 +145,7 @@ Move o valor de 4 bytes no registrador edx para ecx
 mov ecx, DWORD PTR [edx]
 ```    
 
-Move o valor de 4 bytes do endereço ecx+esi*8 para eax
+Move o valor de 4 bytes do endereço ecx+esi\*8 para eax
 ```
 mov eax, DWORD PTR [ecx+esi*8]
 ```
@@ -344,5 +345,119 @@ O código retorna o comprimento da string armazenada na variável `string`, no e
 Os trechos `string db "GRISGRIS", 0` e `string db "GRISGRIS\0"` são equivalentes.
 
 
-# Linguagem C
+# Linguagem C (falta fazer)
 
+
+# Engenharia Reversa (falta fazer)
+Ferramentas
+- gdb
+- ghidra
+- ltrace
+- objdump
+- readelf
+- strace
+
+# Buffer Overflow
+Um *buffer overflow* ocorre quando mais dados são escritos em um buffer (uma área de memória destinada a armazenar dados) do que ele pode suportar. Isso abre margem para que os dados transbordem para áreas adjacentes de memória, corrompendo ou sobrescrevendo o conteúdo existente.
+
+## Medidas de Proteção
+- **Stack Canaries**: São valores especiais, chamados "canários", inseridos pelo compilador entre os buffers de dados (como arrays ou strings) e as áreas sensíveis da pilha (como o endereço de retorno da função). Se um buffer overflow ocorre, o canário deve ser sobrescrito antes de qualquer outra parte crítica da pilha.
+- Address Space Layout Randomization (ASLR)
+- Non-Executable Stack (NX)
+
+Existem programas que verificam se o nosso binário possui medidas de proteção, um exemplo é o [checksec](https://github.com/slimm609/checksec.sh)
+```
+┌──(romio@pop-os)-[~/Desktop]
+└─$ checksec --file=unvulnerable    
+RELRO           STACK CANARY      NX            PIE             RPATH      RUNPATH	Symbols		FORTIFY	Fortified	Fortifiable	FILE
+Full RELRO      Canary found      NX enabled    PIE enabled     No RPATH   No RUNPATH   38) Symbols	  No	0		1		unvulnerable
+
+┌──(romio@pop-os)-[~/Desktop]
+└─$ checksec --file=vulnerable 
+RELRO           STACK CANARY      NX            PIE             RPATH      RUNPATH	Symbols		FORTIFY	Fortified	Fortifiable	FILE
+Full RELRO      No canary found   NX disabled   PIE enabled     No RPATH   No RUNPATH   37) Symbols	  No	0		1		vulnerable
+
+```
+No binário `vulnerable` temos `No canary found`
+No binário `unvulnerable` temos `canary found`
+
+```
+┌──(romio@pop-os)-[~/Desktop]
+└─$ readelf -s vulnerable | grep '__stack_chk_fail' 
+
+┌──(romio@pop-os)-[~/Desktop]
+└─$ readelf -s unvulnerable | grep '__stack_chk_fail'
+    24: 0000000000000000     0 FUNC    GLOBAL DEFAULT  UND __stack_chk_fail[...]
+
+```
+Na versão unvulnerable, há canário.
+
+
+
+Exemplo de código vulnerável a buffer overflow
+```
+#include <stdio.h>
+#include <string.h>
+
+void vulnerable_function(char *user_input) {
+    char buffer[10];
+    strcpy(buffer, user_input);  // Vulnerável a buffer overflow
+}
+
+int main(int argc, char *argv[]) {
+    if (argc > 1) {
+        vulnerable_function(argv[1]);
+    }
+    return 0;
+}
+```
+
+Compilação:
+```
+gcc -fno-stack-protector -z execstack -o vulnerable vulnerable.c
+```
+
+Explicação das flags:
+A opção`-fno-stack-protector` desabilita essa `stack canaries`
+
+Execução
+Note que a execução do código acima funciona quando passamos uma string com 9 caracteres ou menos, isso por que há necessidade de armazenarmos no buffer o `\0`, caracter que marca o fim de uma string.
+```
+┌──(romio@pop-os)-[~/Desktop]
+└─$ ./vulnerable AAAABBBBC                               
+┌──(romio@pop-os)-[~/Desktop]
+└─$ ./vulnerable AAAABBBBCC
+zsh: segmentation fault (core dumped)  ./vulnerable AAAABBBBCC
+```
+
+- **`"AAAABBBBC"` (9 + 1 caracteres):** Cabe exatamente no buffer de 10 bytes. Sem erro.
+- **`"AAAABBBBCC"` (10 + 1 caracteres):** Ultrapassa o buffer, sobrescreve a memória adjacente, causando _segmentation fault_.
+
+
+
+## Dúvidas
+1. por que devemos compilar com esses parametros que desabilitam as medidas de segurança? qual a diferença de compilar com/sem essas medidas? como visualizar essa diferença?
+
+
+# falta abordar (apenas rascunhos pra eu me guiar)
+
+Format Strings:
+Exploração de vulnerabilidades de formato de string, onde você manipula strings de formato em funções de impressão para obter informações sensíveis da memória.
+
+Heap Exploitation:
+Compreensão de técnicas de exploração de vulnerabilidades relacionadas à alocação dinâmica de memória (heap), incluindo técnicas como overflow no heap, double free, entre outras.
+
+Shellcoding:
+Desenvolvimento de códigos de shell (shellcode) em Assembly para explorar vulnerabilidades e obter controle sobre o fluxo de execução.
+
+Return-Oriented Programming (ROP):
+Introdução ao conceito de ROP, uma técnica avançada onde você constrói cadeias de instruções de retorno existentes em um programa para realizar a execução de código arbitrário.
+
+Proteções de Software:
+Exploração de técnicas para superar proteções de segurança comuns, como DEP (Data Execution Prevention) e ASLR (Address Space Layout Randomization).
+
+Análise Estática e Dinâmica:
+Uso de ferramentas de análise estática e dinâmica, como IDA Pro, radare2, gdb e objdump, para entender o funcionamento interno dos binários.
+
+Segurança em Software:
+Compreensão de práticas seguras de programação, identificação de vulnerabilidades comuns e desenvolvimento de habilidades de análise de segurança.
