@@ -350,15 +350,108 @@ Os trechos `string db "GRISGRIS", 0` e `string db "GRISGRIS\0"` são equivalente
 
 # Engenharia Reversa (falta fazer)
 Ferramentas
-- gdb
+- gdb:  É um debugger, serve para vermos o que está acontecendo durante a execução de um programa
+  
+
 - ghidra
 - ltrace
 - objdump
 - readelf
 - strace
 
+## gdb
+Para abrir o programa com o gdb
+```
+┌──(romio@pop-os)-[~/Desktop/testes]
+└─$ gdb stack_zero 
+
+```
+
+**comandos importantes do GDB**
+1. breakpoint main
+   adicionamos um breaking na função especificada, no exemplo acima, na função main
+   ![[Pasted image 20240813134401.png]]
+2. run
+   Inicia o processo de debbuging do programa.
+   
+3. info registers
+   Exibe as informações dos registradores
+    - primeira coluna é o nome do registrador
+	- segunda coluna valor em hexadecimal armazenado no registrador
+	- terceira coluna valor em decimal armazenado no registrador
+	
+	![[Pasted image 20240813132725.png]]
+
+
+2. info pro mappings: 
+   Lista as regiões de memória mapeadas pelo nosso processo(executável)   ![[Pasted image 20240813131816.png]]
+
+3. disassemble main
+   realiza o disassemble da função especificada, no exemplo acima, a função main
+   ![[Pasted image 20240813132653.png]]
+
+Para mais informações sobre comandos importantes do gdb: https://ccrma.stanford.edu/~jos/stkintro/Useful_commands_gdb.html
+
+**endbr64 (End Branch 64 bit)**
+É uma instrução usada para marcar endereços de destino válidos para saltos indiretos e chamadas indiretas no código. Isso ajuda a garantir que o fluxo de controle do programa esteja indo para locais legítimos.
+ 
 # Buffer Overflow
 Um *buffer overflow* ocorre quando mais dados são escritos em um buffer (uma área de memória destinada a armazenar dados) do que ele pode suportar. Isso abre margem para que os dados transbordem para áreas adjacentes de memória, corrompendo ou sobrescrevendo o conteúdo existente.
+
+## Crescimento da pilha
+
+A pilha cresce em direção aos endereços mais baixos da memória. Isso significa que, à medida que novos dados são empilhados (como chamadas de função e variáveis locais), o ponteiro da pilha (`esp` ou `rsp` em arquiteturas x86/x86_64) é decrementado. Portanto, quando você "adiciona" algo à pilha, a memória ocupada vai de um endereço maior para um endereço menor.
+
+Vamos simular o comportamento da stack ao longo da execução do código abaixo
+```
+```c
+#include <stdlib.h>
+#include <unistd.h>
+#include <stdio.h>
+
+int main(int argc, char **argv)
+{
+  volatile int modified;
+  char buffer[64];
+
+  modified = 0;
+  gets(buffer);
+
+  if(modified != 0) {
+      printf("you have changed the 'modified' variable\n");
+  } else {
+      printf("Try again?\n");
+  }
+}
+```
+assembly
+```
+(gdb) disassemble main
+Dump of assembler code for function main:
+   0x080483f4 <+0>:	push   ebp
+   0x080483f5 <+1>:	mov    ebp,esp
+   0x080483f7 <+3>:	and    esp,0xfffffff0
+   0x080483fa <+6>:	sub    esp,0x60
+=> 0x080483fd <+9>:	mov    DWORD PTR [esp+0x5c],0x0
+   0x08048405 <+17>:	lea    eax,[esp+0x1c]
+   0x08048409 <+21>:	mov    DWORD PTR [esp],eax
+   0x0804840c <+24>:	call   0x804830c <gets@plt>
+   0x08048411 <+29>:	mov    eax,DWORD PTR [esp+0x5c]
+   0x08048415 <+33>:	test   eax,eax
+   0x08048417 <+35>:	je     0x8048427 <main+51>
+   0x08048419 <+37>:	mov    DWORD PTR [esp],0x8048500
+   0x08048420 <+44>:	call   0x804832c <puts@plt>
+   0x08048425 <+49>:	jmp    0x8048433 <main+63>
+   0x08048427 <+51>:	mov    DWORD PTR [esp],0x8048529
+   0x0804842e <+58>:	call   0x804832c <puts@plt>
+   0x08048433 <+63>:	leave  
+   0x08048434 <+64>:	ret    
+```
+
+
+
+
+
 
 ## Medidas de Proteção
 - **Stack Canaries**: São valores especiais, chamados "canários", inseridos pelo compilador entre os buffers de dados (como arrays ou strings) e as áreas sensíveis da pilha (como o endereço de retorno da função). Se um buffer overflow ocorre, o canário deve ser sobrescrito antes de qualquer outra parte crítica da pilha.
@@ -366,8 +459,8 @@ Um *buffer overflow* ocorre quando mais dados são escritos em um buffer (uma á
 - Non-Executable Stack (NX)
 
 Existem programas que verificam se o nosso binário possui medidas de proteção, um exemplo é o [checksec](https://github.com/slimm609/checksec.sh)
+
 ```
-┌──(romio@pop-os)-[~/Desktop]
 └─$ checksec --file=unvulnerable    
 RELRO           STACK CANARY      NX            PIE             RPATH      RUNPATH	Symbols		FORTIFY	Fortified	Fortifiable	FILE
 Full RELRO      Canary found      NX enabled    PIE enabled     No RPATH   No RUNPATH   38) Symbols	  No	0		1		unvulnerable
@@ -392,7 +485,7 @@ No binário `unvulnerable` temos `canary found`
 ```
 Na versão unvulnerable, há canário.
 
-
+## Exploiting Stack Overflows (falta fazer)
 
 Exemplo de código vulnerável a buffer overflow
 ```
@@ -434,9 +527,9 @@ zsh: segmentation fault (core dumped)  ./vulnerable AAAABBBBCC
 - **`"AAAABBBBCC"` (10 + 1 caracteres):** Ultrapassa o buffer, sobrescreve a memória adjacente, causando _segmentation fault_.
 
 
-
 ## Dúvidas
 1. por que devemos compilar com esses parametros que desabilitam as medidas de segurança? qual a diferença de compilar com/sem essas medidas? como visualizar essa diferença?
+2. falta abordar como usar buffer overflow de forma maliciosa
 
 
 # falta abordar (apenas rascunhos pra eu me guiar)
